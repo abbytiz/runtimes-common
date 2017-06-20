@@ -4,7 +4,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-// Modification of difflib's unified differ 
+// Modification of difflib's unified differ
 func GetAdditions(a, b []string) []string {
 	matcher := difflib.NewMatcher(a, b)
 	differences := matcher.GetGroupedOpCodes(0)
@@ -51,8 +51,8 @@ func GetMatches(a, b []string) []string {
 			start := m.A
 			end := m.A + m.Size
 			for _, line := range a[start:end] {
-				matches = append(matches, line)				
-			}		
+				matches = append(matches, line)
+			}
 		}
 	}
 	return matches

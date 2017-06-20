@@ -34,7 +34,7 @@ func GetDirectory(dirpath string) Directory {
 func getModifiedFiles(d1, d2 Directory) []string {
 	d1files := d1.Files
 	d2files := d2.Files
-	
+
 	filematches := GetMatches(d1files, d2files)
 
 	var modified []string
@@ -43,7 +43,7 @@ func getModifiedFiles(d1, d2 Directory) []string {
 		f2path := fmt.Sprintf("%s%s", d2.Name, f)
 		if !checkSameFile(f1path, f2path) {
 			modified = append(modified, f)
-		}	
+		}
 	}
 	return modified
 }
@@ -53,7 +53,7 @@ func getAddedFiles(d1, d2 Directory) []string {
 }
 
 func getDeletedFiles(d1, d2 Directory) []string {
-	return GetAdditions(d1.Files, d2.Files)
+	return GetDeletions(d1.Files, d2.Files)
 }
 
 func compareFileEntries(d1, d2 Directory) ([]string, []string, []string) {
@@ -78,9 +78,9 @@ func checkSameFile(f1name, f2name string) bool {
 	}
 
 	if f1stat.Size() != f2stat.Size() {
-		return false	
+		return false
 	}
-	
+
 	// Next, check file contents
 	f1, err := ioutil.ReadFile(f1name)
 	if err != nil {
