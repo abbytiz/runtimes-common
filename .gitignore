@@ -1,4 +1,4 @@
-*.go~
+*~
 *.pyc
 structure_tests.test
 config/*
