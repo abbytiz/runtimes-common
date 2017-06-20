@@ -40,13 +40,13 @@ func get_history_diff(image1 string, image2 string) string {
 	history1 := get_history_list(image1)
 	history2 := get_history_list(image2)
 
-	diff := difflib.ContextDiff{
+	diff := difflib.UnifiedDiff{
 		A:        history1,
 		B:        history2,
 		FromFile: "IMAGE " + image1,
 		ToFile:   "IMAGE " + image2,
 		Eol:      "\n",
 	}
-	result, _ := difflib.GetContextDiffString(diff)
+	result, _ := difflib.GetUnifiedDiffString(diff)
 	return result
 }

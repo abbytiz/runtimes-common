@@ -1,0 +1,6 @@
+{
+	"name": "test/",
+	"files": ["d1.json", "d2.json", "d3.json"],
+	"dirs": []
+}
+
