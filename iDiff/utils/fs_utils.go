@@ -43,7 +43,12 @@ func getModifiedFiles(d1, d2 Directory) []string {
 	for _, f := range filematches {
 		f1path := fmt.Sprintf("%s%s", d1.Name, f)
 		f2path := fmt.Sprintf("%s%s", d2.Name, f)
-		if !checkSameFile(f1path, f2path) {
+		same, err := checkSameFile(f1path, f2path)
+		if err != nil {
+			fmt.Errorf("Error diffing contents of %s and %s: %s", f1path, f2path, err)
+			os.Exit(1)
+		}
+		if !same {
 			modified = append(modified, f)
 		}
 	}
@@ -72,39 +77,35 @@ func compareFileEntries(d1, d2 Directory) ([]string, []string, []string) {
 	return adds, dels, mods
 }
 
-func checkSameFile(f1name, f2name string) bool {
+func checkSameFile(f1name, f2name string) (bool, error) {
 	// Check first if files differ in size and immediately return
 	f1stat, err := os.Stat(f1name)
 	if err != nil {
-		panic(err)
-		os.Exit(1)
+		return false, err
 	}
 	f2stat, err := os.Stat(f2name)
 	if err != nil {
-		panic(err)
-		os.Exit(1)
+		return false, err
 	}
 
 	if f1stat.Size() != f2stat.Size() {
-		return false
+		return false, nil
 	}
 
 	// Next, check file contents
 	f1, err := ioutil.ReadFile(f1name)
 	if err != nil {
-		panic(err)
-		os.Exit(1)
+		return false, err
 	}
 	f2, err := ioutil.ReadFile(f2name)
 	if err != nil {
-		panic(err)
-		os.Exit(1)
+		return false, err
 	}
 
 	if !bytes.Equal(f1, f2) {
-		return false
+		return false, nil
 	}
-	return true
+	return true, nil
 }
 
 func DiffDirectory(d1, d2 Directory) ([]string, []string, []string) {
