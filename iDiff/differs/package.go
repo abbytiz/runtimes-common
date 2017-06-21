@@ -7,16 +7,16 @@ import (
 	"testing/runtimes-common/iDiff/utils"
 )
 
-// History compares the Docker history for each image.
+//  Diffs two packages to see if they have the same contents
 func Package(d1file, d2file string) string {
-	d1, e := utils.GetDirectory(d1file)
-	if e != nil {
-		panic(e)
+	d1, err := utils.GetDirectory(d1file)
+	if err != nil {
+		fmt.Errorf("Error reading directory structure from file %s: %s\n", d1file, err)
 		os.Exit(1)
 	}
-	d2, e := utils.GetDirectory(d2file)
-	if e != nil {
-		panic(e)
+	d2, err := utils.GetDirectory(d2file)
+	if err != nil {
+		fmt.Errorf("Error reading directory structure from file %s: %s\n", d2file, err)
 		os.Exit(1)
 	}
 
@@ -24,7 +24,7 @@ func Package(d1file, d2file string) string {
 	d2name := d2.Name
 
 	adds, dels, mods := utils.DiffDirectory(d1, d2)
-	
+
 	var buffer bytes.Buffer
 	if adds == nil {
 		buffer.WriteString("No files to diff\n")
@@ -33,7 +33,7 @@ func Package(d1file, d2file string) string {
 		buffer.WriteString(s)
 		if len(adds) == 0 {
 			buffer.WriteString("none\n")
-		}else {
+		} else {
 			for _, f := range adds {
 				s = fmt.Sprintf("%s\n", f)
 				buffer.WriteString(s)
@@ -44,7 +44,7 @@ func Package(d1file, d2file string) string {
 		buffer.WriteString(s)
 		if len(dels) == 0 {
 			buffer.WriteString("none\n")
-		}else {
+		} else {
 			for _, f := range dels {
 				s = fmt.Sprintf("%s\n", f)
 				buffer.WriteString(s)
@@ -54,12 +54,12 @@ func Package(d1file, d2file string) string {
 		buffer.WriteString(s)
 		if len(mods) == 0 {
 			buffer.WriteString("none\n")
-		}else {
+		} else {
 			for _, f := range mods {
 				s = fmt.Sprintf("%s\n", f)
 				buffer.WriteString(s)
 			}
-		}	
+		}
 	}
 	return buffer.String()
 }
