@@ -1,11 +1,10 @@
 {
-	"name": "root",
-	"files": ["file1", "file2"],
-	"dirs": 
+	"root",
+	[], 
 	[
 		{
 			"name": "sub1",
-			"files": ["subfile1"],
+			"files": ["subfile11"],
 			"dirs": []
 		},
 		{

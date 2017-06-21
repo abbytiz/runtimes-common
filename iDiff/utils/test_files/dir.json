@@ -1,6 +1,6 @@
 {
 	"name": "root",
-	"files": [],
+	"files": ["file1"],
 	"dirs": 
 	[
 		{

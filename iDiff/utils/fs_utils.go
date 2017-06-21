@@ -14,20 +14,18 @@ type Directory struct {
 	Dirs []Directory
 }
 
-func GetDirectory(dirpath string) Directory {
-	dirfile, e := ioutil.ReadFile(dirpath)
-	if e != nil {
-		panic(e)
-		os.Exit(1)
+func GetDirectory(dirpath string) (Directory, error) {
+	dirfile, err := ioutil.ReadFile(dirpath)
+	if err != nil {
+		return Directory{}, err
 	}
 
 	var dir Directory
-	e = json.Unmarshal(dirfile, &dir)
-	if e != nil {
-		panic(e)
-		os.Exit(1)
+	err = json.Unmarshal(dirfile, &dir)
+	if err != nil {
+		return Directory{}, err
 	}
-	return dir
+	return dir, nil
 }
 
 // Checks for content differences between files of the same name from different directories
@@ -35,9 +33,13 @@ func getModifiedFiles(d1, d2 Directory) []string {
 	d1files := d1.Files
 	d2files := d2.Files
 
+	if len(d1files) == 0 && len(d2files) == 0 {
+		return nil	
+	}
+
 	filematches := GetMatches(d1files, d2files)
 
-	var modified []string
+	modified := []string {}
 	for _, f := range filematches {
 		f1path := fmt.Sprintf("%s%s", d1.Name, f)
 		f2path := fmt.Sprintf("%s%s", d2.Name, f)
@@ -49,10 +51,16 @@ func getModifiedFiles(d1, d2 Directory) []string {
 }
 
 func getAddedFiles(d1, d2 Directory) []string {
+	if len(d1.Files) == 0 && len(d2.Files) == 0 {
+		return nil	
+	}
 	return GetAdditions(d1.Files, d2.Files)
 }
 
 func getDeletedFiles(d1, d2 Directory) []string {
+	if len(d1.Files) == 0 && len(d2.Files) == 0 {
+		return nil	
+	}
 	return GetDeletions(d1.Files, d2.Files)
 }
 
