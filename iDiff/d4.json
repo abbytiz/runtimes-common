@@ -1,0 +1,14 @@
+{
+	"root": "test2/",
+	"entries":
+	[
+		"d1.json",
+		"d3.json",
+		"d4.json",
+		"subdir1",
+		"subdir1/d1.json",
+		"subdir2",
+		"subdir2/d3.json"
+	]	
+}
+

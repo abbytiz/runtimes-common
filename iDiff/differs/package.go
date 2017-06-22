@@ -11,17 +11,17 @@ import (
 func Package(d1file, d2file string) string {
 	d1, err := utils.GetDirectory(d1file)
 	if err != nil {
-		fmt.Errorf("Error reading directory structure from file %s: %s\n", d1file, err)
+		fmt.Printf("Error reading directory structure from file %s: %s\n", d1file, err)
 		os.Exit(1)
 	}
 	d2, err := utils.GetDirectory(d2file)
 	if err != nil {
-		fmt.Errorf("Error reading directory structure from file %s: %s\n", d2file, err)
+		fmt.Printf("Error reading directory structure from file %s: %s\n", d2file, err)
 		os.Exit(1)
 	}
 
-	d1name := d1.Name
-	d2name := d2.Name
+	d1name := d1.Root
+	d2name := d2.Root
 
 	adds, dels, mods := utils.DiffDirectory(d1, d2)
 
