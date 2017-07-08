@@ -99,6 +99,8 @@ func getNodePackages(path string) (map[string]map[string]utils.PackageInfo, erro
 				return packages, err
 			}
 			currInfo.Size = strconv.FormatInt(size, 10)
+			layer := strings.SplitN(modulesDir, "/", 2)
+			currInfo.Layer = layer[0]
 
 			// Check if other package version already recorded
 			if _, ok := packages[packageJSON.Name]; !ok {

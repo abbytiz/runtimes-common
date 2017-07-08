@@ -44,7 +44,7 @@ type Info struct {
 type PackageInfo struct {
 	Version string
 	Size    string
-	// Layer   string
+	Layer   string
 }
 
 func contains(info1 []PackageInfo, keys1 []string, key string, value PackageInfo) (int, bool) {
@@ -52,7 +52,7 @@ func contains(info1 []PackageInfo, keys1 []string, key string, value PackageInfo
 		return 0, false
 	}
 	for i, currVal := range info1 {
-		if !reflect.DeepEqual(currVal, value) {
+		if currVal.Version != value.Version {
 			continue
 		}
 		// Check if both global or local installations
