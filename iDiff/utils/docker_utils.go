@@ -14,19 +14,17 @@ import (
 
 	"github.com/docker/docker/api/types"
 	img "github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
 	"github.com/golang/glog"
+	"github.com/moby/moby/client"
 )
 
 // ValidDockerVersion determines if there is a Docker client of the necessary version locally installed.
 func ValidDockerVersion(eng bool) (bool, error) {
-	_, err := client.NewEnvClient()
+	cli, err := client.NewEnvClient()
 	if err != nil {
 		return false, fmt.Errorf("Docker client error: %s", err)
 	}
-	if eng {
-		return true, nil
-	}
+	cli.NegotiateAPIVersion(context.Background())
 	return false, nil
 }
 func getImagePullResponse(image string, response []Event) (string, error) {
