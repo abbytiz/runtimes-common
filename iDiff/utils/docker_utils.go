@@ -14,8 +14,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	img "github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/client"
 	"github.com/golang/glog"
-	"github.com/moby/moby/client"
 )
 
 // ValidDockerVersion determines if there is a Docker client of the necessary version locally installed.

@@ -161,11 +161,6 @@
 			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
 		},
 		{
-			"ImportPath": "github.com/moby/moby/client",
-			"Comment": "docs-v1.12.0-rc4-2016-07-15-7303-gf7ce35f47",
-			"Rev": "f7ce35f47b1b8e029d7e572ef333cabba1b08e5b"
-		},
-		{
 			"ImportPath": "github.com/opencontainers/go-digest",
 			"Comment": "v1.0.0-rc0-6-g279bed9",
 			"Rev": "279bed98673dd5bef374d3b6e4b09e2af76183bf"
