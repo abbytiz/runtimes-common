@@ -29,10 +29,6 @@ func getDiffOutput(d1file, d2file string, json bool) (string, error) {
 
 	dirDiff := utils.DiffDirectory(d1, d2)
 
-	if json {
-		return utils.JSONify(dirDiff)
-	}
-
-	err = utils.Output(dirDiff)
-	return "", err
+	out := utils.Output{Json: json, TemplatePath: utils.Templates["fs"]}
+	return "", out.WriteOutput(dirDiff)
 }

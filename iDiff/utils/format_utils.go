@@ -1,44 +1,59 @@
 package utils
 
 import (
+	"bufio"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"os"
-	"reflect"
 
 	"github.com/golang/glog"
 )
 
-var templates = map[string]string{
-	"utils.PackageDiff":             "utils/output_templates/singleVersionOutput.txt",
-	"utils.MultiVersionPackageDiff": "utils/output_templates/multiVersionOutput.txt",
-	"differs.HistDiff":              "utils/output_templates/historyOutput.txt",
-	"utils.DirDiff":                 "utils/output_templates/fsOutput.txt",
+type Output struct {
+	Json         bool
+	TemplatePath string
 }
 
-func JSONify(diff interface{}) (string, error) {
+func (out Output) WriteOutput(diff interface{}) error {
+	if out.Json {
+		err := JSONify(diff)
+		return err
+	}
+	return templateOutput(diff, out.TemplatePath)
+}
+
+var Templates = map[string]string{
+	"single": "utils/output_templates/singleVersionOutput.txt",
+	"multi":  "utils/output_templates/multiVersionOutput.txt",
+	"hist":   "utils/output_templates/historyOutput.txt",
+	"fs":     "utils/output_templates/fsOutput.txt",
+}
+
+func JSONify(diff interface{}) error {
 	diffBytes, err := json.MarshalIndent(diff, "", "  ")
 	if err != nil {
-		return "", err
+		return err
 	}
-	return string(diffBytes), nil
+	f := bufio.NewWriter(os.Stdout)
+	defer f.Flush()
+	f.Write(diffBytes)
+	return nil
 }
 
-func getTemplatePath(diff interface{}) (string, error) {
-	diffType := reflect.TypeOf(diff).String()
-	fmt.Println(diffType)
-	if path, ok := templates[diffType]; ok {
-		return path, nil
-	}
-	return "", fmt.Errorf("No available template")
-}
+// func getTemplatePath(diff interface{}) (string, error) {
+// 	diffType := reflect.TypeOf(diff).String()
+// 	fmt.Println(diffType)
+// 	if path, ok := templates[diffType]; ok {
+// 		return path, nil
+// 	}
+// 	return "", fmt.Errorf("No available template")
+// }
 
-func Output(diff interface{}) error {
-	tempPath, err := getTemplatePath(diff)
-	if err != nil {
-		glog.Error(err)
-	}
+func templateOutput(diff interface{}, tempPath string) error {
+	// tempPath, err := getTemplatePath(diff)
+	// if err != nil {
+	// 	glog.Error(err)
+	// }
 	tmpl, err := template.ParseFiles(tempPath)
 	if err != nil {
 		glog.Error(err)

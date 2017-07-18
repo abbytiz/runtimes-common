@@ -35,11 +35,13 @@ func AptDiff(d1file, d2file string, json bool, eng bool) (string, error) {
 	diff := utils.GetMapDiff(pack1, pack2)
 	diff.Image1 = dirPath1
 	diff.Image2 = dirPath2
-	if json {
-		return utils.JSONify(diff)
-	}
-	utils.Output(diff)
-	return "", nil
+	out := utils.Output{Json: json, TemplatePath: utils.Templates["single"]}
+	return "", out.WriteOutput(diff)
+	// if json {
+	// 	return utils.JSONify(diff)
+	// }
+	// utils.Output(diff)
+	// return "", nil
 }
 
 func getPackages(path string) (map[string]utils.PackageInfo, error) {

@@ -67,9 +67,6 @@ func getHistoryDiff(image1, image2 string, json bool, eng bool) (string, error) 
 	adds := utils.GetAdditions(history1, history2)
 	dels := utils.GetDeletions(history1, history2)
 	diff := HistDiff{image1, image2, adds, dels}
-	if json {
-		return utils.JSONify(diff)
-	}
-	err = utils.Output(diff)
-	return "", err
+	out := utils.Output{Json: json, TemplatePath: utils.Templates["hist"]}
+	return "", out.WriteOutput(diff)
 }

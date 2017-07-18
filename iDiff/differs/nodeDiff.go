@@ -41,11 +41,8 @@ func NodeDiff(d1file, d2file string, json bool, eng bool) (string, error) {
 	diff := utils.GetMultiVersionMapDiff(pack1, pack2)
 	diff.Image1 = dirPath1
 	diff.Image2 = dirPath2
-	if json {
-		return utils.JSONify(diff)
-	}
-	utils.Output(diff)
-	return "", nil
+	out := utils.Output{Json: json, TemplatePath: utils.Templates["multi"]}
+	return "", out.WriteOutput(diff)
 }
 
 func buildNodePaths(path string) ([]string, error) {
