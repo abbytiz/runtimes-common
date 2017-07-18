@@ -12,7 +12,8 @@ import (
 )
 
 // History compares the Docker history for each image.
-func History(img1, img2 string, json bool, eng bool) (string, error) {
+
+func HistoryDiff(img1, img2 string, json bool, eng bool) (string, error) {
 	return getHistoryDiff(img1, img2, json, eng)
 }
 
