@@ -10,7 +10,7 @@ import (
 )
 
 type DiffResult interface {
-	getTemplate() string
+	Output(json bool) error
 }
 
 var diffs = map[string]func(string, string, bool, bool) (DiffResult, error){
@@ -23,7 +23,7 @@ var diffs = map[string]func(string, string, bool, bool) (DiffResult, error){
 	"node":    NodeDiff,
 }
 
-func Diff(arg1, arg2, differ string, json bool, eng bool) (string, error) {
+func Diff(arg1, arg2, differ string, json bool, eng bool) (DiffResult, error) {
 	if f, exists := diffs[differ]; exists {
 		fValue := reflect.ValueOf(f)
 		histValue := reflect.ValueOf(HistoryDiff)
@@ -33,10 +33,10 @@ func Diff(arg1, arg2, differ string, json bool, eng bool) (string, error) {
 		}
 		return specificDiffer(f, arg1, arg2, json, eng)
 	}
-	return "", errors.New("Unknown differ")
+	return nil, errors.New("Unknown differ")
 }
 
-func specificDiffer(f func(string, string, bool, bool) (string, error), img1, img2 string, json bool, eng bool) (string, error) {
+func specificDiffer(f func(string, string, bool, bool) (DiffResult, error), img1, img2 string, json bool, eng bool) (DiffResult, error) {
 	var buffer bytes.Buffer
 	validDiff := true
 	imgPath1, err := utils.ImageToFS(img1, eng)
@@ -50,7 +50,7 @@ func specificDiffer(f func(string, string, bool, bool) (string, error), img1, im
 		validDiff = false
 	}
 
-	var diff string
+	var diff DiffResult
 	if validDiff {
 		output, err := f(imgPath1, imgPath2, json, eng)
 		if err != nil {

@@ -13,8 +13,9 @@ import (
 
 // History compares the Docker history for each image.
 
-func HistoryDiff(img1, img2 string, json bool, eng bool) (string, error) {
-	return getHistoryDiff(img1, img2, json, eng)
+func HistoryDiff(img1, img2 string, json bool, eng bool) (DiffResult, error) {
+	diff, err := getHistoryDiff(img1, img2, json, eng)
+	return &HistDiffResult{diff}, err
 }
 
 func getHistoryList(img string, eng bool) ([]string, error) {
@@ -54,6 +55,14 @@ type HistDiff struct {
 	Image2 string
 	Adds   []string
 	Dels   []string
+}
+
+type HistDiffResult struct {
+	Diff HistDiff
+}
+
+func (m *HistDiffResult) Output(json bool) error {
+	return utils.WriteOutput(m.Diff, json)
 }
 
 func getHistoryDiff(image1, image2 string, json bool, eng bool) (HistDiff, error) {
