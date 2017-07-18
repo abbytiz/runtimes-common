@@ -21,38 +21,6 @@ func FileDiff(img1, img2 string, json bool, eng bool) (string, error) {
 	return "", out.WriteOutput(diff)
 }
 
-// func getDiffOutput(dirDiff utils.DirDiff, json bool) (string, error) {
-// 	if json {
-// 		return utils.JSONify(dirDiff)
-// 	}
-
-// 	var buffer bytes.Buffer
-
-// 	s := fmt.Sprintf("These entries have been added to %s\n", dirDiff.Image1)
-// 	buffer.WriteString(s)
-// 	if len(dirDiff.Adds) == 0 {
-// 		buffer.WriteString("\tNo files have been added\n")
-// 	} else {
-// 		for _, f := range dirDiff.Adds {
-// 			s = fmt.Sprintf("\t%s\n", f)
-// 			buffer.WriteString(s)
-// 		}
-// 	}
-
-// 	s = fmt.Sprintf("These entries have been deleted from %s\n", dirDiff.Image1)
-// 	buffer.WriteString(s)
-// 	if len(dirDiff.Dels) == 0 {
-// 		buffer.WriteString("\tNo files have been deleted\n")
-// 	} else {
-// 		for _, f := range dirDiff.Dels {
-// 			s = fmt.Sprintf("\t%s\n", f)
-// 			buffer.WriteString(s)
-// 		}
-// 	}
-
-// 	return buffer.String(), nil
-// }
-
 func diffImageFiles(img1, img2 string, eng bool) (utils.DirDiff, error) {
 	var diff utils.DirDiff
 	img1FS, err := utils.ImageToFS(img1, eng)
