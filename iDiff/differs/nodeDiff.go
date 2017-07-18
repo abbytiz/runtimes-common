@@ -44,7 +44,7 @@ func NodeDiff(d1file, d2file string, json bool, eng bool) (string, error) {
 	if json {
 		return utils.JSONify(diff)
 	}
-	utils.OutputMulti(diff)
+	utils.Output(diff)
 	return "", nil
 }
 

@@ -2,11 +2,20 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
-	"log"
 	"os"
-	"strings"
+	"reflect"
+
+	"github.com/golang/glog"
 )
+
+var templates = map[string]string{
+	"utils.PackageDiff":             "utils/output_templates/singleVersionOutput.txt",
+	"utils.MultiVersionPackageDiff": "utils/output_templates/multiVersionOutput.txt",
+	"differs.HistDiff":              "utils/output_templates/historyOutput.txt",
+	"utils.DirDiff":                 "utils/output_templates/fsOutput.txt",
+}
 
 func JSONify(diff interface{}) (string, error) {
 	diffBytes, err := json.MarshalIndent(diff, "", "  ")
@@ -16,42 +25,29 @@ func JSONify(diff interface{}) (string, error) {
 	return string(diffBytes), nil
 }
 
-func Output(diff PackageDiff) error {
-	const master = `Packages found only in {{.Image1}}:{{range $name, $value := .Packages1}}{{"\n"}}{{print "-"}}{{$name}}{{"\t"}}{{$value}}{{end}}{{"\n"}}
-Packages found only in {{.Image2}}:{{range $name, $value := .Packages2}}{{"\n"}}{{print "-"}}{{$name}}{{"\t"}}{{$value}}{{end}}
-Version differences:{{"\n"}}	(Package:	{{.Image1}}{{"\t\t"}}{{.Image2}}){{range .InfoDiff}}
-	{{.Package}}:	{{.Info1.Version}}	{{.Info2.Version}}
-	{{end}}`
-
-	funcs := template.FuncMap{"join": strings.Join}
-
-	masterTmpl, err := template.New("master").Funcs(funcs).Parse(master)
-	if err != nil {
-		log.Fatal(err)
+func getTemplatePath(diff interface{}) (string, error) {
+	diffType := reflect.TypeOf(diff).String()
+	fmt.Println(diffType)
+	if path, ok := templates[diffType]; ok {
+		return path, nil
 	}
-
-	if err := masterTmpl.Execute(os.Stdout, diff); err != nil {
-		log.Fatal(err)
-	}
-	return nil
+	return "", fmt.Errorf("No available template")
 }
 
-func OutputMulti(diff MultiVersionPackageDiff) error {
-	const master = `Packages found only in {{.Image1}}:{{range $name, $value := .Packages1}}{{"\n"}}{{print "-"}}{{$name}}{{end}}{{"\n"}}
-Packages found only in {{.Image2}}:{{range $name, $value := .Packages2}}{{"\n"}}{{print "-"}}{{$name}}{{end}}
-Version differences:{{"\n"}}	(Package:	{{.Image1}}{{"\t\t"}}{{.Image2}}){{range .InfoDiff}}
-	{{.Package}}:	{{range .Info1}}{{.Version}}{{end}}	{{"\t"}} {{range .Info2}}{{.Version}}{{end}}
-	{{end}}`
-
-	funcs := template.FuncMap{"join": strings.Join}
-
-	masterTmpl, err := template.New("master").Funcs(funcs).Parse(master)
+func Output(diff interface{}) error {
+	tempPath, err := getTemplatePath(diff)
 	if err != nil {
-		log.Fatal(err)
+		glog.Error(err)
 	}
-
-	if err := masterTmpl.Execute(os.Stdout, diff); err != nil {
-		log.Fatal(err)
+	tmpl, err := template.ParseFiles(tempPath)
+	if err != nil {
+		glog.Error(err)
+		return err
+	}
+	err = tmpl.Execute(os.Stdout, diff)
+	if err != nil {
+		glog.Error(err)
+		return err
 	}
 	return nil
 }

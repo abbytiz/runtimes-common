@@ -2,9 +2,6 @@ package differs
 
 import (
 	"fmt"
-	"html/template"
-	"log"
-	"os"
 	"strings"
 
 	"github.com/GoogleCloudPlatform/runtimes-common/iDiff/utils"
@@ -73,22 +70,6 @@ func getHistoryDiff(image1, image2 string, json bool, eng bool) (string, error) 
 	if json {
 		return utils.JSONify(diff)
 	}
-	result := formatDiff(diff)
-	return result, nil
-}
-
-func formatDiff(diff HistDiff) string {
-	const histTemp = `Docker file lines found only in {{.Image1}}:{{block "list" .Adds}}{{"\n"}}{{range .}}{{print "-" .}}{{end}}{{end}}
-Docker file lines found only in {{.Image2}}:{{block "list2" .Dels}}{{"\n"}}{{range .}}{{print "-" .}}{{end}}{{end}}`
-
-	funcs := template.FuncMap{"join": strings.Join}
-
-	histTemplate, err := template.New("histTemp").Funcs(funcs).Parse(histTemp)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := histTemplate.Execute(os.Stdout, diff); err != nil {
-		log.Fatal(err)
-	}
-	return ""
+	err = utils.Output(diff)
+	return "", err
 }
