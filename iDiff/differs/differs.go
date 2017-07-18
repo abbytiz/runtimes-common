@@ -9,7 +9,11 @@ import (
 	"github.com/GoogleCloudPlatform/runtimes-common/iDiff/utils"
 )
 
-var diffs = map[string]func(string, string, bool, bool) (string, error){
+type DiffResult interface {
+	getTemplate() string
+}
+
+var diffs = map[string]func(string, string, bool, bool) (DiffResult, error){
 	"hist":    HistoryDiff,
 	"history": HistoryDiff,
 	"file":    FileDiff,

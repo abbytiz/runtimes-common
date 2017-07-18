@@ -13,23 +13,22 @@ import (
 
 // NodeDiff compares the packages installed by apt-get.
 // TODO: Move this code to a place so that it isn't repeated within each specific differ.
-func NodeDiff(img1, img2 string, json bool, eng bool) (string, error) {
+func NodeDiff(img1, img2 string, json bool, eng bool) (utils.MultiVersionPackageDiff, error) {
 	pack1, err := getNodePackages(img1)
 	if err != nil {
 		glog.Errorf("Error reading packages from directory %s: %s\n", img1, err)
-		return "", err
+		return utils.MultiVersionPackageDiff{}, err
 	}
 	pack2, err := getNodePackages(img2)
 	if err != nil {
 		glog.Errorf("Error reading packages from directory %s: %s\n", img2, err)
-		return "", err
+		return utils.MultiVersionPackageDiff{}, err
 	}
 
 	diff := utils.GetMultiVersionMapDiff(pack1, pack2)
 	diff.Image1 = img1
 	diff.Image2 = img2
-	out := utils.Output{Json: json, TemplatePath: utils.Templates["multi"]}
-	return "", out.WriteOutput(diff)
+	return diff, err
 }
 
 func buildNodePaths(path string) ([]string, error) {

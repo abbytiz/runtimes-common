@@ -10,15 +10,14 @@ import (
 )
 
 // FileDiff diffs two packages and compares their contents
-func FileDiff(img1, img2 string, json bool, eng bool) (string, error) {
+func FileDiff(img1, img2 string, json bool, eng bool) (utils.DirDiff, error) {
 	diff, err := diffImageFiles(img1, img2, eng)
 
 	if err != nil {
-		return "", err
+		return utils.DirDiff{}, err
 	}
 
-	out := utils.Output{Json: json, TemplatePath: utils.Templates["fs"]}
-	return "", out.WriteOutput(diff)
+	return diff, err
 }
 
 func diffImageFiles(img1, img2 string, eng bool) (utils.DirDiff, error) {

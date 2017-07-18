@@ -9,22 +9,30 @@ import (
 	"github.com/golang/glog"
 )
 
+type AptDiffResult struct {
+	diff utils.PackageDiff
+}
+
+func (dr AptDiffResult) getTemplate() string {
+	return "utils/output_templates/singleVersionOutput.txt"
+}
+
 // AptDiff compares the packages installed by apt-get.
-func AptDiff(img1, img2 string, json bool, eng bool) (string, error) {
+func AptDiff(img1, img2 string, json bool, eng bool) (AptDiffResult, error) {
 	pack1, err := getPackages(img1)
 	if err != nil {
-		return "", err
+		return AptDiffResult{}, err
 	}
 	pack2, err := getPackages(img2)
 	if err != nil {
-		return "", err
+		return AptDiffResult{}, err
 	}
 
 	diff := utils.GetMapDiff(pack1, pack2)
 	diff.Image1 = img1
 	diff.Image2 = img2
-	out := utils.Output{Json: json, TemplatePath: utils.Templates["single"]}
-	return "", out.WriteOutput(diff)
+	diffResult := AptDiffResult{diff}
+	return diffResult, nil
 }
 
 func getPackages(path string) (map[string]utils.PackageInfo, error) {

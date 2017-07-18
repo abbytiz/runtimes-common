@@ -28,7 +28,7 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if diff, err := differs.Diff(args[2], args[3], args[1], json, eng); err == nil {
-			fmt.Println(diff)
+			utils.WriteOutput(diff, json)
 		} else {
 			glog.Error(err.Error())
 			os.Exit(1)

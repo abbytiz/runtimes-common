@@ -56,18 +56,17 @@ type HistDiff struct {
 	Dels   []string
 }
 
-func getHistoryDiff(image1, image2 string, json bool, eng bool) (string, error) {
+func getHistoryDiff(image1, image2 string, json bool, eng bool) (HistDiff, error) {
 	history1, err := getHistoryList(image1, eng)
 	if err != nil {
-		return "", err
+		return HistDiff{}, err
 	}
 	history2, err := getHistoryList(image2, eng)
 	if err != nil {
-		return "", err
+		return HistDiff{}, err
 	}
 	adds := utils.GetAdditions(history1, history2)
 	dels := utils.GetDeletions(history1, history2)
 	diff := HistDiff{image1, image2, adds, dels}
-	out := utils.Output{Json: json, TemplatePath: utils.Templates["hist"]}
-	return "", out.WriteOutput(diff)
+	return diff, nil
 }

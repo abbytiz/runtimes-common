@@ -10,15 +10,14 @@ import (
 )
 
 // PipDiff compares pip-installed Python packages between layers of two different images.
-func PipDiff(img1, img2 string, json bool, eng bool) (string, error) {
+func PipDiff(img1, img2 string, json bool, eng bool) (utils.PackageDiff, error) {
 	pack1 := getPythonPackages(img1)
 	pack2 := getPythonPackages(img2)
 
 	diff := utils.GetMapDiff(pack1, pack2)
 	diff.Image1 = img1
 	diff.Image2 = img2
-	out := utils.Output{Json: json, TemplatePath: utils.Templates["single"]}
-	return "", out.WriteOutput(diff)
+	return diff, nil
 }
 
 func getPythonVersion(pathToLayer string) (string, bool) {
