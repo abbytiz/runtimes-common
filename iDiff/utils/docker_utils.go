@@ -16,7 +16,33 @@ import (
 	img "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/golang/glog"
+	"github.com/heroku/docker-registry-client/registry"
 )
+
+// "github.com/heroku/docker-registry-client/registry"
+
+func pullImage(image string) (string, error) {
+	URLPattern := regexp.MustCompile("^.+/(.+(:.+){0,1})$")
+	URLMatch := URLPattern.FindStringSubmatch(image)
+	imageID := URLMatch[1]
+	registryURL := strings.TrimSuffix(image, URLMatch[1])
+	fmt.Println(imageID, registryURL)
+
+	username := ""
+	password := ""
+	hub, err := registry.New(registryURL, username, password)
+	manifest, err := hub.Manifest(imageID, "14")
+	// Download the layers
+	reader, err := hub.DownloadLayer(imageID, manifest.FSLayer)
+	if reader != nil {
+		fmt.Println(reader)
+		defer reader.Close()
+	}
+	if err != nil {
+		return "", err
+	}
+	return "", nil
+}
 
 // ValidDockerVersion determines if there is a Docker client of the necessary version locally installed.
 func ValidDockerVersion(eng bool) (bool, error) {
