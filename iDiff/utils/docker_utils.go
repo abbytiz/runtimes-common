@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	man1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/docker/api/types"
 	img "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -19,28 +20,52 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 )
 
-// "github.com/heroku/docker-registry-client/registry"
-
-func pullImage(image string) (string, error) {
-	URLPattern := regexp.MustCompile("^.+/(.+(:.+){0,1})$")
+func getImageURLAndID(image string) (string, string, string) {
+	var imageID, imageTag, registryURL string
+	URLPattern := regexp.MustCompile("^.+.io/(.+(:.+){0,1})$")
 	URLMatch := URLPattern.FindStringSubmatch(image)
-	imageID := URLMatch[1]
-	registryURL := strings.TrimSuffix(image, URLMatch[1])
-	fmt.Println(imageID, registryURL)
+	imageIDTag := strings.Split(URLMatch[1], ":")
+	imageID = imageIDTag[0]
+	if len(imageIDTag) == 2 {
+		imageTag = imageIDTag[1]
+	} else {
+		imageTag = "latest"
+	}
+	registryURL = strings.TrimSuffix(image, URLMatch[1])
+	return imageID, imageTag, registryURL
+}
 
+func getImageManifest(imageID, imageTag, registryURL string) (*man1.Manifest, error) {
 	username := ""
 	password := ""
 	hub, err := registry.New(registryURL, username, password)
-	manifest, err := hub.Manifest(imageID, "14")
-	// Download the layers
-	reader, err := hub.DownloadLayer(imageID, manifest.FSLayer)
-	if reader != nil {
-		fmt.Println(reader)
-		defer reader.Close()
-	}
 	if err != nil {
-		return "", err
+		glog.Error(err)
+		return nil, err
 	}
+	manifest, err := hub.Manifest(imageID, imageTag)
+	if err != nil {
+		glog.Error(err)
+		return nil, err
+	}
+	fmt.Println(manifest)
+	return manifest, err
+	// return hub, err
+}
+
+func pullImage(image string) (string, error) {
+	imageID, imageTag, registryURL := getImageURLAndID(image)
+	getImageManifest(imageID, imageTag, registryURL)
+	// fmt.Println(manifest)
+	// // Download the layers
+	// reader, err := hub.DownloadLayer(imageID, manifest.FSLayers)
+	// if reader != nil {
+	// 	fmt.Println(reader)
+	// 	defer reader.Close()
+	// }
+	// if err != nil {
+	// 	return "", err
+	// }
 	return "", nil
 }
 
