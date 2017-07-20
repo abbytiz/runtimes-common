@@ -4,6 +4,9 @@ import (
 	"testing"
 )
 
+func TestGet(t *testing.T) {
+	get("gcr.io/google_containers/busybox:1.24")
+}
 func TestGetImagePullResponse(t *testing.T) {
 	for _, test := range []struct {
 		image          string

@@ -12,11 +12,20 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/containers/image/transports/alltransports"
 	"github.com/docker/docker/api/types"
 	img "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/golang/glog"
 )
+
+func get(imgName string) error {
+	ref, err := alltransports.ParseImageName(imgName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // ValidDockerVersion determines if there is a Docker client of the necessary version locally installed.
 func ValidDockerVersion(eng bool) (bool, error) {
