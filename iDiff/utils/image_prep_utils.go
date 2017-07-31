@@ -3,12 +3,16 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 
+	"github.com/containers/image/directory"
+	"github.com/containers/image/docker"
+	"github.com/containers/image/types"
 	"github.com/golang/glog"
 )
 
@@ -129,31 +133,68 @@ type CloudPrepper struct {
 
 func (p CloudPrepper) ImageToFS() (string, error) {
 	// check client compatibility with Docker API
-	valid, err := ValidDockerVersion()
+	ref, err := docker.ParseReference("//" + p.Source)
+	if err != nil {
+		panic(err)
+	}
+
+	img, err := ref.NewImage(nil)
+	if err != nil {
+		panic(err)
+	}
+	defer img.Close()
+
+	imgSrc, err := ref.NewImageSource(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	tmpDir, err := ioutil.TempDir(".", "layers-")
 	if err != nil {
 		return "", err
 	}
-	var tarPath string
-	if !valid {
-		glog.Info("Docker version incompatible with api, shelling out to local Docker client.")
-		imageID, imageName, err := pullImageCmd(p.Source)
-		if err != nil {
-			return "", err
-		}
-		tarPath, err = imageToTarCmd(imageID, imageName)
-	} else {
-		imageID, imageName, err := pullImageFromRepo(p.Source)
-		if err != nil {
-			return "", err
-		}
-		tarPath, err = saveImageToTar(imageID, imageName)
+	tmpDirRef, err := directory.NewReference(tmpDir)
+	if err != nil {
+		return "", err
 	}
+	dest, err := tmpDirRef.NewImageDestination(nil)
 	if err != nil {
 		return "", err
 	}
 
-	defer os.Remove(tarPath)
-	return getImageFromTar(tarPath)
+	defer func() {
+		if err := dest.Close(); err != nil {
+			glog.Error(err)
+		}
+	}()
+
+	for _, b := range img.LayerInfos() {
+		bi, blobSize, err := imgSrc.GetBlob(b)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Got blob: %s", bi)
+		if _, err := dest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
+			if closeErr := bi.Close(); closeErr != nil {
+				return "", closeErr
+			}
+			return "", err
+		}
+	}
+
+	manifest, _, err := img.Manifest()
+	if err != nil {
+		return "", err
+	}
+	fmt.Println(manifest)
+
+	if err != nil {
+		panic(err)
+	}
+	return "", nil
+
+	// defer os.Remove(tarPath)
+	// return getImageFromTar(tarPath)
 }
 
 type IDPrepper struct {
