@@ -131,6 +131,70 @@ type CloudPrepper struct {
 	ImagePrepper
 }
 
+func test() {
+	ref, err := docker.ParseReference("//gcr.io/gcp-runtimes/multi-base")
+	if err != nil {
+		panic(err)
+	}
+
+	img, err := ref.NewImage(nil)
+	if err != nil {
+		panic(err)
+	}
+	defer img.Close()
+
+	imgSrc, err := ref.NewImageSource(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	tmpDir, err := ioutil.TempDir(".", "layers-")
+	if err != nil {
+		glog.Error(err)
+	}
+	tmpDirRef, err := directory.NewReference(tmpDir)
+	if err != nil {
+		glog.Error(err)
+	}
+	dest, err := tmpDirRef.NewImageDestination(nil)
+	if err != nil {
+		glog.Error(err)
+	}
+
+	defer func() {
+		if err := dest.Close(); err != nil {
+			glog.Error(err)
+		}
+	}()
+
+	for _, b := range img.LayerInfos() {
+		fmt.Println(b.Digest)
+		fmt.Println(b.URLs)
+		bi, _, err := imgSrc.GetBlob(b)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("Got blob: %s", bi)
+
+		// if _, err := dest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
+		// 	if closeErr := bi.Close(); closeErr != nil {
+		// 		glog.Error(closeErr)
+		// 	}
+		// }
+	}
+
+	manifest, s, err := img.Manifest()
+	if err != nil {
+		glog.Error(err)
+	}
+	dest.PutManifest(manifest)
+	fmt.Println(s)
+
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (p CloudPrepper) ImageToFS() (string, error) {
 	// check client compatibility with Docker API
 	ref, err := docker.ParseReference("//" + p.Source)
