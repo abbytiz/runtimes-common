@@ -1,14 +1,16 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 
 	"github.com/golang/glog"
 )
@@ -113,16 +115,6 @@ func getHistory(imgPath string) ([]string, error) {
 	return histList, nil
 }
 
-func testPy(gostr string) error {
-	err := python.Initialize()
-	if err != nil {
-		return err
-	}
-	pystr := python.PyString_FromString(gostr)
-	str := python.PyString_AsString(pystr)
-	fmt.Println("hello [", str, "]")
-}
-
 func getImageFromTar(tarPath string) (string, error) {
 	glog.Info("Extracting image tar to obtain image file system")
 	err := ExtractTar(tarPath)
@@ -169,6 +161,23 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 
 type IDPrepper struct {
 	ImagePrepper
+}
+
+func undockerTar(tar obj) error {
+	glog.Info("Unpacking image to final file system")
+	pullArgs := []string{"-o ", image}
+	dockerPullCmd := exec.Command("docker", pullArgs...)
+	var response bytes.Buffer
+	dockerPullCmd.Stdout = &response
+	if err := dockerPullCmd.Run(); err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok && status.ExitStatus() > 0 {
+				glog.Error("Docker Pull Command Exit Status: ", status.ExitStatus())
+			}
+		} else {
+			return "", "", err
+		}
+	}
 }
 
 func (p IDPrepper) ImageToFS() (string, error) {
