@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -110,6 +111,16 @@ func getHistory(imgPath string) ([]string, error) {
 		}
 	}
 	return histList, nil
+}
+
+func testPy(gostr string) error {
+	err := python.Initialize()
+	if err != nil {
+		return err
+	}
+	pystr := python.PyString_FromString(gostr)
+	str := python.PyString_AsString(pystr)
+	fmt.Println("hello [", str, "]")
 }
 
 func getImageFromTar(tarPath string) (string, error) {
