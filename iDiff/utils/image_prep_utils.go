@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -163,21 +164,24 @@ type IDPrepper struct {
 	ImagePrepper
 }
 
-func undockerTar(tar obj) error {
+func undockerTar(tarPath string) (string, error) {
+	tReader := tar.NewReader(tarPath)
+	tr := ioutil.ReadAll(tarPath)
 	glog.Info("Unpacking image to final file system")
-	pullArgs := []string{"-o ", image}
-	dockerPullCmd := exec.Command("docker", pullArgs...)
+	pullArgs := []string{"-o ", "temp", tr}
+	undockerCmd := exec.Command("undocker", pullArgs...)
 	var response bytes.Buffer
-	dockerPullCmd.Stdout = &response
-	if err := dockerPullCmd.Run(); err != nil {
+	undockerCmd.Stdout = &response
+	if err := undockerCmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok && status.ExitStatus() > 0 {
-				glog.Error("Docker Pull Command Exit Status: ", status.ExitStatus())
+				glog.Error("Undocker Command Exit Status: ", status.ExitStatus())
 			}
 		} else {
-			return "", "", err
+			return "", err
 		}
 	}
+	return "temp", nil
 }
 
 func (p IDPrepper) ImageToFS() (string, error) {
