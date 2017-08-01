@@ -3,12 +3,18 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+func TestUntar(t *testing.T) {
+	err := UnTar("test1.tar", "test1")
+	fmt.Println(err)
+}
 
 func TestUnTar(t *testing.T) {
 	testCases := []struct {

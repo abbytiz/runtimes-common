@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -175,6 +176,11 @@ func test() {
 			panic(err)
 		}
 		fmt.Println("Got blob: %s", bi)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(bi)
+		newStr := buf.String()
+
+		fmt.Println("the blob: ", newStr)
 
 		// if _, err := dest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
 		// 	if closeErr := bi.Close(); closeErr != nil {
@@ -196,7 +202,10 @@ func test() {
 }
 
 func (p CloudPrepper) ImageToFS() (string, error) {
-	// check client compatibility with Docker API
+	// imageName := "hello-world"
+	// imageName := "fedora"
+	// imageName := "gcr.io/gcp-runtimes/multi-base"
+	name := "testImg"
 	ref, err := docker.ParseReference("//" + p.Source)
 	if err != nil {
 		panic(err)
@@ -213,17 +222,23 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 		panic(err)
 	}
 
-	tmpDir, err := ioutil.TempDir(".", "layers-")
+	// manByte, str, err := imgSrc.GetManifest()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(str)
+
+	tmpDir, err := ioutil.TempDir(".", name)
 	if err != nil {
-		return "", err
+		glog.Error(err)
 	}
 	tmpDirRef, err := directory.NewReference(tmpDir)
 	if err != nil {
-		return "", err
+		glog.Error(err)
 	}
 	dest, err := tmpDirRef.NewImageDestination(nil)
 	if err != nil {
-		return "", err
+		glog.Error(err)
 	}
 
 	defer func() {
@@ -233,32 +248,52 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 	}()
 
 	for _, b := range img.LayerInfos() {
+		// fmt.Println(b.Digest)
+		// fmt.Println(b.URLs)
 		bi, blobSize, err := imgSrc.GetBlob(b)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("Got blob: %s", bi)
-		if _, err := dest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
+		// fmt.Println("Got blob: %s", bi)
+		// buf := new(bytes.Buffer)
+		// buf.ReadFrom(bi)
+		// newStr := buf.String()
+		// fmt.Println("the blob: ", newStr)
+		newLayerDir, err := ioutil.TempDir(tmpDir, "layer")
+		if err != nil {
+			glog.Error(err)
+		}
+		newLayerRef, err := directory.NewReference(newLayerDir)
+		if err != nil {
+			glog.Error(err)
+		}
+		layerDest, err := newLayerRef.NewImageDestination(nil)
+		if err != nil {
+			glog.Error(err)
+		}
+
+		if _, err := layerDest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
 			if closeErr := bi.Close(); closeErr != nil {
-				return "", closeErr
+				glog.Error(closeErr)
 			}
-			return "", err
 		}
 	}
 
-	manifest, _, err := img.Manifest()
-	if err != nil {
-		return "", err
-	}
-	fmt.Println(manifest)
+	layers, _ := ioutil.ReadDir(tmpDir)
+	for _, layerFolder := range layers {
+		layerFolderPath := filepath.Join(tmpDir, layerFolder.Name())
+		tars, _ := ioutil.ReadDir(layerFolderPath)
+		for _, layer := range tars {
+			path := filepath.Join(layerFolderPath, layer.Name())
+			fmt.Println("UNPACKING ", path)
+			target := strings.TrimSuffix(path, filepath.Ext(layer.Name()))
+			fmt.Println("path ", path, "\ntarget ", target)
+			UnTar(path, target)
+			defer os.Remove(path)
+		}
 
-	if err != nil {
-		panic(err)
 	}
-	return "", nil
-
-	// defer os.Remove(tarPath)
-	// return getImageFromTar(tarPath)
+	return tmpDir, nil
 }
 
 type IDPrepper struct {

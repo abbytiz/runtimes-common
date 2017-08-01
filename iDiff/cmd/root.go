@@ -103,8 +103,9 @@ var RootCmd = &cobra.Command{
 			}
 			fmt.Println()
 			glog.Info("Removing image file system directories from system")
-			errMsg := remove(image1.FSPath, true)
-			errMsg += remove(image2.FSPath, true)
+			errMsg := ""
+			// errMsg := remove(image1.FSPath, true)
+			// errMsg += remove(image2.FSPath, true)
 			if errMsg != "" {
 				glog.Error(errMsg)
 			}
