@@ -1,14 +1,18 @@
 package utils
 
 import (
+	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/containers/image/directory"
@@ -201,12 +205,13 @@ func test() {
 	}
 }
 
-func (p CloudPrepper) ImageToFS() (string, error) {
-	// imageName := "hello-world"
-	// imageName := "fedora"
-	// imageName := "gcr.io/gcp-runtimes/multi-base"
-	name := "testImg"
-	ref, err := docker.ParseReference("//" + p.Source)
+func pullAndSaveImage(image string) (string, error) {
+	URLPattern := regexp.MustCompile("^.+/(.+(:.+){0,1})$")
+	URLMatch := URLPattern.FindStringSubmatch(image)
+	imageName := strings.Replace(URLMatch[1], ":", "", -1)
+	// imageURL := strings.TrimSuffix(image, URLMatch[2])
+
+	ref, err := docker.ParseReference("//" + image)
 	if err != nil {
 		panic(err)
 	}
@@ -222,13 +227,7 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 		panic(err)
 	}
 
-	// manByte, str, err := imgSrc.GetManifest()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(str)
-
-	tmpDir, err := ioutil.TempDir(".", name)
+	tmpDir, err := ioutil.TempDir(".", imageName+"-")
 	if err != nil {
 		glog.Error(err)
 	}
@@ -248,18 +247,11 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 	}()
 
 	for _, b := range img.LayerInfos() {
-		// fmt.Println(b.Digest)
-		// fmt.Println(b.URLs)
 		bi, blobSize, err := imgSrc.GetBlob(b)
 		if err != nil {
 			panic(err)
 		}
-		// fmt.Println("Got blob: %s", bi)
-		// buf := new(bytes.Buffer)
-		// buf.ReadFrom(bi)
-		// newStr := buf.String()
-		// fmt.Println("the blob: ", newStr)
-		newLayerDir, err := ioutil.TempDir(tmpDir, "layer")
+		newLayerDir, err := ioutil.TempDir(tmpDir, "layer-")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -277,23 +269,82 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 				glog.Error(closeErr)
 			}
 		}
+
 	}
 
-	layers, _ := ioutil.ReadDir(tmpDir)
-	for _, layerFolder := range layers {
-		layerFolderPath := filepath.Join(tmpDir, layerFolder.Name())
-		tars, _ := ioutil.ReadDir(layerFolderPath)
-		for _, layer := range tars {
-			path := filepath.Join(layerFolderPath, layer.Name())
-			fmt.Println("UNPACKING ", path)
-			target := strings.TrimSuffix(path, filepath.Ext(layer.Name()))
-			fmt.Println("path ", path, "\ntarget ", target)
-			UnTar(path, target)
-			defer os.Remove(path)
+	tarPath, err := writeToTar(tmpDir)
+	if err != nil {
+		glog.Error(err)
+		return tarPath, err
+	}
+	return tarPath, nil
+}
+
+func writeToTar(tmpDir string) (string, error) {
+	tarPath := tmpDir + ".tar"
+	fw, err := os.Create(tarPath)
+	tw := tar.NewWriter(fw)
+	defer tw.Close()
+	walkFn := func(path string, info os.FileInfo, err error) error {
+		if info.Mode().IsDir() {
+			return nil
 		}
+		newPath := path[len(tmpDir):]
+		if len(newPath) == 0 {
+			return nil
+		}
+		fr, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer fr.Close()
 
+		if h, err := tar.FileInfoHeader(info, newPath); err != nil {
+			log.Fatalln(err)
+		} else {
+			h.Name = newPath
+			if err = tw.WriteHeader(h); err != nil {
+				log.Fatalln(err)
+			}
+		}
+		if length, err := io.Copy(tw, fr); err != nil {
+			log.Fatalln(err)
+		} else {
+			fmt.Println(length)
+		}
+		return nil
 	}
-	return tmpDir, nil
+
+	if err = filepath.Walk(tmpDir, walkFn); err != nil {
+		return tarPath, err
+	}
+	return tarPath, nil
+}
+
+func (p CloudPrepper) ImageToFS() (string, error) {
+	tarPath, err := pullAndSaveImage(p.Source)
+	if err != nil {
+		glog.Error(err)
+		return tarPath, err
+	}
+	defer os.Remove(tarPath)
+	return getImageFromTar(tarPath)
+
+	// layers, _ := ioutil.ReadDir(tmpDir)
+	// for _, layerFolder := range layers {
+	// 	layerFolderPath := filepath.Join(tmpDir, layerFolder.Name())
+	// 	tars, _ := ioutil.ReadDir(layerFolderPath)
+	// 	for _, layer := range tars {
+	// 		path := filepath.Join(layerFolderPath, layer.Name())
+	// 		fmt.Println("UNPACKING ", path)
+	// 		target := strings.TrimSuffix(path, filepath.Ext(layer.Name()))
+	// 		fmt.Println("path ", path, "\ntarget ", target)
+	// 		UnTar(path, target)
+	// 		defer os.Remove(path)
+	// 	}
+
+	// }
+	// return tmpDir, nil
 }
 
 type IDPrepper struct {
