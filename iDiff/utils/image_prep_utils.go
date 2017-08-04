@@ -2,7 +2,6 @@ package utils
 
 import (
 	"archive/tar"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,75 +135,6 @@ type CloudPrepper struct {
 	ImagePrepper
 }
 
-func test() {
-	ref, err := docker.ParseReference("//gcr.io/gcp-runtimes/multi-base")
-	if err != nil {
-		panic(err)
-	}
-
-	img, err := ref.NewImage(nil)
-	if err != nil {
-		panic(err)
-	}
-	defer img.Close()
-
-	imgSrc, err := ref.NewImageSource(nil, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	tmpDir, err := ioutil.TempDir(".", "layers-")
-	if err != nil {
-		glog.Error(err)
-	}
-	tmpDirRef, err := directory.NewReference(tmpDir)
-	if err != nil {
-		glog.Error(err)
-	}
-	dest, err := tmpDirRef.NewImageDestination(nil)
-	if err != nil {
-		glog.Error(err)
-	}
-
-	defer func() {
-		if err := dest.Close(); err != nil {
-			glog.Error(err)
-		}
-	}()
-
-	for _, b := range img.LayerInfos() {
-		fmt.Println(b.Digest)
-		fmt.Println(b.URLs)
-		bi, _, err := imgSrc.GetBlob(b)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Got blob: %s", bi)
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(bi)
-		newStr := buf.String()
-
-		fmt.Println("the blob: ", newStr)
-
-		// if _, err := dest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
-		// 	if closeErr := bi.Close(); closeErr != nil {
-		// 		glog.Error(closeErr)
-		// 	}
-		// }
-	}
-
-	manifest, s, err := img.Manifest()
-	if err != nil {
-		glog.Error(err)
-	}
-	dest.PutManifest(manifest)
-	fmt.Println(s)
-
-	if err != nil {
-		panic(err)
-	}
-}
-
 func pullAndSaveImage(image string) (string, error) {
 	URLPattern := regexp.MustCompile("^.+/(.+(:.+){0,1})$")
 	URLMatch := URLPattern.FindStringSubmatch(image)
@@ -272,6 +202,12 @@ func pullAndSaveImage(image string) (string, error) {
 
 	}
 
+	manifest, _, err := img.Manifest()
+	if err != nil {
+		glog.Error(err)
+	}
+	dest.PutManifest(manifest)
+
 	tarPath, err := writeToTar(tmpDir)
 	if err != nil {
 		glog.Error(err)
@@ -327,7 +263,7 @@ func (p CloudPrepper) ImageToFS() (string, error) {
 		glog.Error(err)
 		return tarPath, err
 	}
-	defer os.Remove(tarPath)
+	// defer os.Remove(tarPath)
 	return getImageFromTar(tarPath)
 
 	// layers, _ := ioutil.ReadDir(tmpDir)
