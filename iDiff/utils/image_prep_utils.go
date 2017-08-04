@@ -16,7 +16,6 @@ import (
 
 	"github.com/containers/image/directory"
 	"github.com/containers/image/docker"
-	"github.com/containers/image/types"
 	"github.com/golang/glog"
 )
 
@@ -177,28 +176,42 @@ func pullAndSaveImage(image string) (string, error) {
 	}()
 
 	for _, b := range img.LayerInfos() {
-		bi, blobSize, err := imgSrc.GetBlob(b)
+		bi, _, err := imgSrc.GetBlob(b)
 		if err != nil {
 			panic(err)
 		}
-		newLayerDir, err := ioutil.TempDir(tmpDir, "layer-")
-		if err != nil {
-			glog.Error(err)
-		}
-		newLayerRef, err := directory.NewReference(newLayerDir)
-		if err != nil {
-			glog.Error(err)
-		}
-		layerDest, err := newLayerRef.NewImageDestination(nil)
-		if err != nil {
-			glog.Error(err)
-		}
 
-		if _, err := layerDest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
-			if closeErr := bi.Close(); closeErr != nil {
-				glog.Error(closeErr)
-			}
-		}
+		// gzf, err := gzip.NewReader(bi)
+		// if err != nil {
+		// 	return err
+		// }
+		// tf := tar.NewReader(gzf)
+		// for header, err := tf.Next(); err != io.EOF; header, err = tf.Next() {
+		// 	switch header.Typeflag {
+		// 	case tar.TypeReg:
+		// 		# Do something with the data!
+		// 		data := make([]byte, header.Size)
+		// 		_, err := tf.Read(data)
+		// 	}
+		// }
+		// newLayerDir, err := ioutil.TempDir(tmpDir, "layer-")
+		// if err != nil {
+		// 	glog.Error(err)
+		// }
+		// newLayerRef, err := directory.NewReference(newLayerDir)
+		// if err != nil {
+		// 	glog.Error(err)
+		// }
+		// layerDest, err := newLayerRef.NewImageDestination(nil)
+		// if err != nil {
+		// 	glog.Error(err)
+		// }
+
+		// if _, err := layerDest.PutBlob(bi, types.BlobInfo{Digest: b.Digest, Size: blobSize}); err != nil {
+		// 	if closeErr := bi.Close(); closeErr != nil {
+		// 		glog.Error(closeErr)
+		// 	}
+		// }
 
 	}
 

@@ -21,6 +21,7 @@ type Directory struct {
 // UnTar takes in a path to a tar file and writes the untarred version to the provided target.
 // Only untars one level, does not untar nested tars.
 func UnTar(filename string, path string) error {
+	// glog.Error("Untarring ", filename, " to ", path)
 	if _, ok := os.Stat(path); ok != nil {
 		os.MkdirAll(path, 0777)
 	}
@@ -39,7 +40,8 @@ func UnTar(filename string, path string) error {
 			break
 		}
 		if err != nil {
-			glog.Fatalf(err.Error())
+			glog.Error(err)
+			return err
 		}
 
 		target := filepath.Join(path, header.Name)
@@ -48,6 +50,7 @@ func UnTar(filename string, path string) error {
 
 		// if its a dir and it doesn't exist create it
 		case tar.TypeDir:
+			// glog.Error("saw dir")
 			if _, err := os.Stat(target); err != nil {
 				if err := os.MkdirAll(target, mode); err != nil {
 					return err
@@ -57,7 +60,7 @@ func UnTar(filename string, path string) error {
 
 		// if it's a file create it
 		case tar.TypeReg:
-
+			// glog.Error("saw file")
 			currFile, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 			if err != nil {
 				return err
@@ -84,14 +87,16 @@ func ExtractTar(path string) error {
 	var untarWalkFn func(path string, info os.FileInfo, err error) error
 
 	untarWalkFn = func(path string, info os.FileInfo, err error) error {
+		// glog.Error("walking... ", path)
 		if isTar(path) {
+			glog.Error("Found tar: ", path)
 			target := strings.TrimSuffix(path, filepath.Ext(path))
 			UnTar(path, target)
 			if removeTar {
 				os.Remove(path)
 			}
 			// remove nested tar files that get copied but not the original tar passed
-			removeTar = true
+			// removeTar = true
 			filepath.Walk(target, untarWalkFn)
 		}
 		return nil
