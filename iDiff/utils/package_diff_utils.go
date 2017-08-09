@@ -47,56 +47,38 @@ type PackageInfo struct {
 	Size    string
 }
 
-func contains(info1 []PackageInfo, keys1 []string, key string, value PackageInfo) (int, bool) {
-	if len(info1) != len(keys1) {
-		return 0, false
-	}
-	for i, currVal := range info1 {
-		if !reflect.DeepEqual(currVal, value) {
-			continue
-		}
-		// Check installation path is the same
-		if key == keys1[i] {
-			return i, true
-		}
-	}
-	return 0, false
-}
-
 func multiVersionDiff(infoDiff []MultiVersionInfo, key string, map1, map2 map[string]PackageInfo) []MultiVersionInfo {
-	diff1Possible := []PackageInfo{}
-	diff1PossibleKeys := []string{}
-
-	for key1, value1 := range map1 {
-		_, ok := map2[key1]
-		if !ok {
-			diff1Possible = append(diff1Possible, value1)
-			diff1PossibleKeys = append(diff1PossibleKeys, key1)
-		} else {
-			// if key in both maps, means layer hash is the same therefore packages are the same
-			delete(map2, key1)
-		}
-	}
+	// diff1Possible := []PackageInfo{}
+	// diff1PossibleKeys := []string{}
 
 	diff1 := []PackageInfo{}
 	diff2 := []PackageInfo{}
-	for key2, value2 := range map2 {
-		index, ok := contains(diff1Possible, diff1PossibleKeys, key2, value2)
+
+	for key1, value1 := range map1 {
+		val2, ok := map2[key1]
 		if !ok {
-			diff2 = append(diff2, value2)
+			// this package is not installed in the other image at this location
+			diff1 = append(diff1, value1)
+			continue
 		} else {
-			if index == 0 {
-				diff1Possible = diff1Possible[1:]
-				diff1PossibleKeys = diff1PossibleKeys[1:]
+			if reflect.DeepEqual(value1, val2) {
+				// this package is installed with the same version and size in the same location
+				delete(map2, key1)
+			} else {
+				// same location but different version or size
+				diff1 = append(diff1, value1)
+				diff2 = append(diff2, val2)
+				delete(map2, key1)
 			}
-			diff1Possible = append(diff1Possible[:index], diff1Possible[index:]...)
-			diff1PossibleKeys = append(diff1PossibleKeys[:index], diff1PossibleKeys[index:]...)
 		}
+
 	}
 
-	for _, val := range diff1Possible {
-		diff1 = append(diff1, val)
+	// all locations of the given package in map2, which were not also in map1
+	for _, value2 := range map2 {
+		diff2 = append(diff2, value2)
 	}
+
 	if len(diff1) > 0 || len(diff2) > 0 {
 		infoDiff = append(infoDiff, MultiVersionInfo{key, diff1, diff2})
 	}
