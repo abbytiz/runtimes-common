@@ -63,20 +63,29 @@ func (d NodeDiffer) getPackages(path string) (map[string]map[string]utils.Packag
 				return packages, err
 			}
 			currInfo.Size = strconv.FormatInt(size, 10)
+			mapPath := strings.Replace(packagePath, path, "", 1)
 
 			// Check if other package version already recorded
 			if _, ok := packages[packageJSON.Name]; !ok {
 				// package not yet seen
 				infoMap := make(map[string]utils.PackageInfo)
-				infoMap[currPackage] = currInfo
+				infoMap[mapPath] = currInfo
 				packages[packageJSON.Name] = infoMap
 				continue
 			}
-			packages[packageJSON.Name][currPackage] = currInfo
+			packages[packageJSON.Name][mapPath] = currInfo
 
 		}
 	}
 	return packages, nil
+}
+
+func getComparisonPath(path string) string {
+	newPath := strings.SplitN(path, "/", 2)
+	if len(newPath) == 2 {
+		return newPath[1]
+	}
+	return newPath[0]
 }
 
 type nodePackage struct {

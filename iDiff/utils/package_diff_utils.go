@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
-	"strings"
 
 	"github.com/golang/glog"
 )
@@ -56,13 +55,8 @@ func contains(info1 []PackageInfo, keys1 []string, key string, value PackageInfo
 		if !reflect.DeepEqual(currVal, value) {
 			continue
 		}
-		// Check if both global or local installations by trimming img-id and layer hash
-		tempPath1 := strings.SplitN(key, "/", 3)
-		tempPath2 := strings.SplitN(keys1[i], "/", 3)
-		if len(tempPath1) != 3 || len(tempPath2) != 3 {
-			continue
-		}
-		if tempPath1[2] == tempPath2[2] {
+		// Check installation path is the same
+		if key == keys1[i] {
 			return i, true
 		}
 	}
